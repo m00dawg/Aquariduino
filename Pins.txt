@@ -1,0 +1,23 @@
+Digtal:
+0 - RX
+1 - TX
+2 - Temp Sensors 
+3 
+4  - SD Card
+5 
+6
+7 - WiFi Handshake
+8  
+9
+10 
+11 - SPI (WiFi Shield)
+12 - SPI (WiFi Shield)
+13 - SPI (WiFi Shield)
+
+Analog:
+0 - Heater Relay
+1 - Lamp Relay
+2 - Air Pump Relay
+3 - Water Pump Relay
+4 - LCD Shield
+5 - LCD Shield

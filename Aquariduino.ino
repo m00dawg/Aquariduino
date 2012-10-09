@@ -38,7 +38,7 @@
 #define ON 1
 #define OFF 0
 
-/* Temperature Sensors 1-Wire Bus Pin */
+/* One wire bus pin */
 #define ONE_WIRE_BUS 7
 
 /*
@@ -56,7 +56,7 @@ OneWire oneWire(ONE_WIRE_BUS);
 // Pass our oneWire reference to Dallas Temperature. 
 DallasTemperature sensors(&oneWire);
 
-// Addresses of temp sensors
+// Arrays to hold temperature devices 
 // DeviceAddress insideThermometer, outsideThermometer;
 DeviceAddress tankThermometer;
 
@@ -67,19 +67,19 @@ DeviceAddress tankThermometer;
  */
 
 /* Define LCD Size */
-const byte lcdColumns = 16;
-const byte lcdRows = 2;
+const int lcdColumns = 16;
+const int lcdRows = 2;
 
 /* Define Fridge AC Relay Control Pin */
-const byte heaterPin = 12;
+const int heaterPin = 12;
 
 /* 1 second = 1000 milliseconds */
 const int second = 1000;
 
 /* Polling and update timeouts */
-const byte sensorPollingInterval = 5;
-const byte lcdUpdateInterval = 5;
-const byte alertTimeout = 5;
+const int sensorPollingInterval = 5;
+const int lcdUpdateInterval = 5;
+const int alertTimeout = 5;
 
 /* 
    Temperature range to cycle heater in Celsius
@@ -88,7 +88,7 @@ const byte alertTimeout = 5;
    alertHighTemp = Tank too hot even with heater off
    alertLowTemp = Tank too cold even with heater on
 */
-const float lowTemp = 24;
+const float lowTemp = 24.25;
 const float highTemp = 24.5;
 const float alertHighTemp = 27.0;
 const float alertLowTemp = 23.0;
@@ -120,11 +120,15 @@ int backlightColor = WHITE;
 boolean heater = FALSE;
 
 /* Variable to store buttons */
-byte buttons = 0;
+uint8_t buttons = 0;
 
 void setup()
 {
+  // set up the LCD's number of columns and rows: 
   lcd.begin(lcdColumns, lcdRows);
+
+  /* Turn off header, since we don't know what's going on until
+      we poll the temperature sensor */
   pinMode(heaterPin, OUTPUT);
   digitalWrite(heaterPin, LOW);
 
@@ -274,8 +278,6 @@ void controlHeater()
 
 void error(String message)
 {
-    digitalWrite(heaterPin, LOW);
-    heater = false;
     displayInfo("**** ERROR ****", message);
     for(int count = 0; count < alertTimeout; ++count)
     {
@@ -284,5 +286,4 @@ void error(String message)
       lcd.setBacklight(BLUE);
       delay(second);
     }
-
 }
