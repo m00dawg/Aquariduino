@@ -3,9 +3,9 @@
   By: Tim Soderstrom
 
   Pins used:
-    Heater Relay: 12
+    Heater Relay: A0
     LCD Shield: Analog Pins 4 & 5 (I2C Bus)
-    Temperature 1 Wire Bus: 7
+    Temperature 1 Wire Bus: 2
 */
 
 #include <Wire.h>
@@ -34,47 +34,27 @@
 #define VIOLET 0x5
 #define WHITE 0x7
 
+
+
 /* States */
 #define ON 1
 #define OFF 0
-
-/* One wire bus pin */
-#define ONE_WIRE_BUS 7
-
-/*
- * -------
- * OBJECTS
- * ------- 
- */
-
-// LCD Object
-Adafruit_RGBLCDShield lcd = Adafruit_RGBLCDShield();
-
-// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
-OneWire oneWire(ONE_WIRE_BUS);
-
-// Pass our oneWire reference to Dallas Temperature. 
-DallasTemperature sensors(&oneWire);
-
-// Arrays to hold temperature devices 
-// DeviceAddress insideThermometer, outsideThermometer;
-DeviceAddress tankThermometer;
 
 /* 
  * ---------
  * CONSTANTS
  * ---------
  */
+ 
+const int second = 1000;
 
-/* Define LCD Size */
+/* LCD */
 const int lcdColumns = 16;
 const int lcdRows = 2;
-
-/* Define Fridge AC Relay Control Pin */
-const int heaterPin = 12;
-
-/* 1 second = 1000 milliseconds */
-const int second = 1000;
+ 
+ /* Pins */
+const int temperatureProbes = 7;
+const int heaterPin = A0;
 
 /* Polling and update timeouts */
 const int sensorPollingInterval = 5;
@@ -92,6 +72,26 @@ const float lowTemp = 24.25;
 const float highTemp = 24.5;
 const float alertHighTemp = 27.0;
 const float alertLowTemp = 23.0;
+
+/*
+ * -------
+ * OBJECTS
+ * ------- 
+ */
+
+// LCD Object
+Adafruit_RGBLCDShield lcd = Adafruit_RGBLCDShield();
+
+// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
+OneWire oneWire(temperatureProbes);
+
+// Pass our oneWire reference to Dallas Temperature. 
+DallasTemperature sensors(&oneWire);
+
+// Arrays to hold temperature devices 
+// DeviceAddress insideThermometer, outsideThermometer;
+DeviceAddress tankThermometer;
+
 
 /*
  * ----------------
@@ -178,13 +178,13 @@ void loop()
       {
         lcd.setBacklight(OFF);
         backlight = false;
-        delay(1 * second);
+        delay(second);
       }
       else
       {
         lcd.setBacklight(backlightColor);
         backlight = true;
-        delay(1 * second);   
+        delay(second);   
       }
     }
     lastLCDUpdate = millis();
