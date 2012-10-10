@@ -1,5 +1,5 @@
 /*
-  Aquariduino v0.25
+  Aquariduino v0.30
   By: Tim Soderstrom
 
   Pins used:
@@ -51,6 +51,7 @@ const int second = 1000;
 /* LCD */
 const int lcdColumns = 16;
 const int lcdRows = 2;
+const int maxPage = 3;
  
  /* Pins */
 const int temperatureProbes = 7;
@@ -115,9 +116,12 @@ float currentTemp = 0;
 boolean clearLCD = FALSE;
 boolean backlight = TRUE;
 int backlightColor = WHITE;
+int page = 0;
 
 /* Heater Status */
 boolean heater = FALSE;
+
+
 
 /* Variable to store buttons */
 uint8_t buttons = 0;
@@ -137,7 +141,7 @@ void setup()
   lcd.setCursor(0,0);
   lcd.print("Aquariduino");
   lcd.setCursor(0,1);
-  lcd.print("v0.25");
+  lcd.print("v0.30");
   delay(2000);
   lcd.clear();
   
@@ -165,13 +169,17 @@ void loop()
   if (buttons)
   {
     if (buttons & BUTTON_LEFT)
-      displayInfo("Temp Range:", String(floatToString(lowTemp)) + "-" + String(floatToString(highTemp)) + " C");
+    {
+      --page;
+      if(page < 0)
+        page = maxPage; 
+    }
     if (buttons & BUTTON_RIGHT)
-      displayInfo("Alert Temps:", String(floatToString(alertLowTemp)) + "-" + String(floatToString(alertHighTemp)) + " C");
-    if (buttons & BUTTON_UP)
-      displayInfo("Min/Max Temps:", String(floatToString(minTemp)) + "-" + String(floatToString(maxTemp)) + " C");
-    if (buttons & BUTTON_DOWN)
-      displayInfo("Uptime (Secs):", String(millis() / second));
+    {
+      ++page;
+      if(page > maxPage)
+        page = 0;
+    }
     if (buttons & BUTTON_SELECT)
     {
       if(backlight)
@@ -185,6 +193,32 @@ void loop()
         lcd.setBacklight(backlightColor);
         backlight = true;
         delay(second);   
+      }
+    }
+    else
+    {
+      switch(page)
+      {
+        case 0:
+        {
+          displayInfo("Min/Max Temps:", String(floatToString(minTemp)) + "-" + String(floatToString(maxTemp)) + " C");
+          break;
+        }
+        case 1:
+        {
+          displayInfo("Alert Temps:", String(floatToString(alertLowTemp)) + "-" + String(floatToString(alertHighTemp)) + " C");
+          break; 
+        }
+        case 2:
+        {
+          displayInfo("Temp Range:", String(floatToString(lowTemp)) + "-" + String(floatToString(highTemp)) + " C");
+          break; 
+        }
+        case 3:
+        {
+          displayInfo("Uptime (Secs):", String(millis() / second));
+          break; 
+        }
       }
     }
     lastLCDUpdate = millis();
