@@ -121,13 +121,15 @@ int page = 0;
 /* Heater Status */
 boolean heater = FALSE;
 
-
-
 /* Variable to store buttons */
 uint8_t buttons = 0;
 
+char serialInput = '\0';
+
 void setup()
-{
+{ 
+  Serial.begin(9600); 
+
   // set up the LCD's number of columns and rows: 
   lcd.begin(lcdColumns, lcdRows);
 
@@ -247,6 +249,20 @@ void loop()
       displayInfo("Temp: " + String(floatToString(currentTemp)) + " C", "Heater Off");
     lastLCDUpdate = millis();
   }
+}
+
+void serialEvent()
+{
+  while(Serial.available() > 0)
+     serialInput = Serial.read(); 
+  if(serialInput == 'P')
+  {
+    serialInput = '\0';
+    Serial.print("WaterTemp:");
+    Serial.print(currentTemp, DEC);
+    Serial.print(" Heater:");
+    Serial.println(heater, DEC);
+  }  
 }
 
 void displayInfo(String topText, String bottomText)
