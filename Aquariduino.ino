@@ -34,8 +34,6 @@
 #define VIOLET 0x5
 #define WHITE 0x7
 
-
-
 /* States */
 #define ON 1
 #define OFF 0
@@ -51,7 +49,7 @@ const int second = 1000;
 /* LCD */
 const int lcdColumns = 16;
 const int lcdRows = 2;
-const int maxPage = 3;
+const int maxPage = 4;
  
  /* Pins */
 const int temperatureProbes = 7;
@@ -120,6 +118,7 @@ int page = 0;
 
 /* Heater Status */
 boolean heater = FALSE;
+int heaterCycles = 0;
 
 /* Variable to store buttons */
 uint8_t buttons = 0;
@@ -219,7 +218,12 @@ void loop()
         case 3:
         {
           displayInfo("Uptime (Secs):", String(millis() / second));
-          break; 
+          break;
+        }
+        case 4:
+        {
+          displayInfo("Heater Cycles:", String(heaterCycles));
+          break;
         }
       }
     }
@@ -322,6 +326,8 @@ void controlHeater()
     if(currentTemp < lowTemp)
     {
       digitalWrite(heaterPin, HIGH);
+      if(heater)
+        ++heaterCycles;
       heater = true;
     }
 }
