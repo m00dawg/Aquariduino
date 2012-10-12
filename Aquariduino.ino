@@ -1,5 +1,5 @@
 /*
-  Aquariduino v0.30
+  Aquariduino v0.35
   By: Tim Soderstrom
 
   Pins used:
@@ -142,7 +142,7 @@ void setup()
   lcd.setCursor(0,0);
   lcd.print("Aquariduino");
   lcd.setCursor(0,1);
-  lcd.print("v0.30");
+  lcd.print("v0.35");
   delay(2000);
   lcd.clear();
   
