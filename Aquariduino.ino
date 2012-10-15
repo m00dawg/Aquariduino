@@ -44,17 +44,17 @@
  * ---------
  */
  
-const int second = 1000;
+const int second = 1000; //1000 ms = 1 second
+
+ /* Pins */
+const int temperatureProbes = 2;
+const int heaterPin = A0;
 
 /* LCD */
 const int lcdColumns = 16;
 const int lcdRows = 2;
 const int maxPage = 4;
  
- /* Pins */
-const int temperatureProbes = 7;
-const int heaterPin = A0;
-
 /* Polling and update timeouts */
 const int sensorPollingInterval = 5;
 const int lcdUpdateInterval = 5;
@@ -91,7 +91,6 @@ DallasTemperature sensors(&oneWire);
 // DeviceAddress insideThermometer, outsideThermometer;
 DeviceAddress tankThermometer;
 
-
 /*
  * ----------------
  * STATUS VARIABLES
@@ -123,7 +122,10 @@ int heaterCycles = 0;
 /* Variable to store buttons */
 uint8_t buttons = 0;
 
-char serialInput = '\0';
+/* Switches from C to F for display */
+boolean displayCelsius = TRUE;
+
+//char serialInput = '\0';
 
 void setup()
 { 
@@ -169,6 +171,14 @@ void loop()
   /* Process button input */
   if (buttons)
   {
+    if(buttons & BUTTON_UP)
+    {
+      if(displayCelsius)
+        displayCelsius = false;
+      else
+        displayCelsius = true;
+      displayCurrentTemp();
+    }
     if (buttons & BUTTON_LEFT)
     {
       --page;
@@ -202,17 +212,20 @@ void loop()
       {
         case 0:
         {
-          displayInfo("Min/Max Temps:", String(floatToString(minTemp)) + "-" + String(floatToString(maxTemp)) + " C");
+         // displayInfo("Min/Max Temps:", String(floatToString(minTemp)) + "-" + String(floatToString(maxTemp)) + " C");
+          displayInfo("Min/Max Temps:", formatTemperatures(minTemp, maxTemp));
           break;
         }
         case 1:
         {
-          displayInfo("Alert Temps:", String(floatToString(alertLowTemp)) + "-" + String(floatToString(alertHighTemp)) + " C");
+          //displayInfo("Alert Temps:", String(floatToString(alertLowTemp)) + "-" + String(floatToString(alertHighTemp)) + " C");
+          displayInfo("Alert Temps:", formatTemperatures(alertLowTemp, alertHighTemp));
           break; 
         }
         case 2:
         {
-          displayInfo("Temp Range:", String(floatToString(lowTemp)) + "-" + String(floatToString(highTemp)) + " C");
+          //displayInfo("Temp Range:", String(floatToString(lowTemp)) + "-" + String(floatToString(highTemp)) + " C");
+          displayInfo("CFG Temp Range:", formatTemperatures(lowTemp, highTemp));
           break; 
         }
         case 3:
@@ -234,27 +247,12 @@ void loop()
   /* Regular Display Routine */
   else if(currentMillis - lastLCDUpdate > lcdUpdateInterval * second)
   {
-    if(backlight)
-    {
-      if(currentTemp > alertHighTemp)
-        lcd.setBacklight(RED);
-      else if(currentTemp >= highTemp)
-        lcd.setBacklight(YELLOW);
-      else if(currentTemp > lowTemp && currentTemp < highTemp)
-        lcd.setBacklight(GREEN);
-      else if(currentTemp <= lowTemp)
-        lcd.setBacklight(VIOLET);
-      else if(currentTemp < alertLowTemp)
-        lcd.setBacklight(BLUE);
-    }   
-    if(heater)
-      displayInfo("Temp: " + String(floatToString(currentTemp)) + " C", "Heater On");
-    else
-      displayInfo("Temp: " + String(floatToString(currentTemp)) + " C", "Heater Off");
+    displayCurrentTemp();
     lastLCDUpdate = millis();
   }
 }
 
+/*
 void serialEvent()
 {
   while(Serial.available() > 0)
@@ -268,6 +266,44 @@ void serialEvent()
     Serial.println(heater, DEC);
   }  
 }
+*/
+
+String formatTemperature(float temperature)
+{
+  if(displayCelsius)
+   return String(floatToString(temperature)) + "C";
+  return String(floatToString(sensors.toFahrenheit(temperature))) + "F";
+}
+
+String formatTemperatures(float temp1, float temp2)
+{
+  if(displayCelsius)
+   return String(floatToString(temp1)) + "-" + String(floatToString(temp2)) + " C";
+  return String(floatToString(sensors.toFahrenheit(temp1)))
+    + "-" + String(floatToString(sensors.toFahrenheit(temp2))) + "F"; 
+}
+
+void displayCurrentTemp()
+{
+  if(backlight)
+  {
+    if(currentTemp > alertHighTemp)
+      lcd.setBacklight(RED);
+    else if(currentTemp >= highTemp)
+      lcd.setBacklight(YELLOW);
+    else if(currentTemp > lowTemp && currentTemp < highTemp)
+      lcd.setBacklight(GREEN);
+    else if(currentTemp <= lowTemp)
+      lcd.setBacklight(VIOLET);
+    else if(currentTemp < alertLowTemp)
+      lcd.setBacklight(BLUE);
+  }   
+  if(heater)
+    displayInfo("Temp: " + formatTemperature(currentTemp), "Heater On");
+  else
+    displayInfo("Temp: " + formatTemperature(currentTemp) + " C", "Heater Off"); 
+}
+
 
 void displayInfo(String topText, String bottomText)
 {  

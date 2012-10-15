@@ -9,10 +9,10 @@ Digtal:
 7 - WiFi Handshake
 8  
 9
-10 
-11 - SPI (WiFi Shield)
-12 - SPI (WiFi Shield)
-13 - SPI (WiFi Shield)
+10 - SPI (WiFi/Ethernet Shield)
+11 - SPI (WiFi/Ethernet Shield)
+12 - SPI (WiFi/Ethernet Shield)
+13 - SPI (WiFi/Ethernet Shield)
 
 Analog:
 0 - Heater Relay
