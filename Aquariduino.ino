@@ -1,5 +1,5 @@
 /*
-  Aquariduino v0.35
+  Aquariduino v1.00
   By: Tim Soderstrom
 
   Pins used:
@@ -47,7 +47,7 @@
 const int second = 1000; //1000 ms = 1 second
 
  /* Pins */
-const int temperatureProbes = 2;
+const int temperatureProbes = 7;
 const int heaterPin = A0;
 
 /* LCD */
@@ -110,8 +110,9 @@ float minTemp = 100;
 float currentTemp = 0;
 
 /* LCD Status Variables */
-boolean clearLCD = FALSE;
-boolean backlight = TRUE;
+boolean clearLCD = false;
+boolean backlight = true;
+boolean displayPage = false;
 int backlightColor = WHITE;
 int page = 0;
 
@@ -144,7 +145,7 @@ void setup()
   lcd.setCursor(0,0);
   lcd.print("Aquariduino");
   lcd.setCursor(0,1);
-  lcd.print("v0.35");
+  lcd.print("v1.00");
   delay(2000);
   lcd.clear();
   
@@ -178,20 +179,10 @@ void loop()
       else
         displayCelsius = true;
       displayCurrentTemp();
+      lastLCDUpdate = millis();
+      clearLCD = true;
     }
-    if (buttons & BUTTON_LEFT)
-    {
-      --page;
-      if(page < 0)
-        page = maxPage; 
-    }
-    if (buttons & BUTTON_RIGHT)
-    {
-      ++page;
-      if(page > maxPage)
-        page = 0;
-    }
-    if (buttons & BUTTON_SELECT)
+    else if (buttons & BUTTON_SELECT)
     {
       if(backlight)
       {
@@ -203,11 +194,26 @@ void loop()
       {
         lcd.setBacklight(backlightColor);
         backlight = true;
-        delay(second);   
+        delay(second); 
       }
     }
-    else
+    else if(buttons & BUTTON_LEFT)
     {
+      --page;
+      if(page < 0)
+        page = maxPage; 
+      displayPage = true;
+    }
+    else if(buttons & BUTTON_RIGHT)
+    {
+      ++page;
+      if(page > maxPage)
+        page = 0;
+      displayPage = true;
+    }
+  }
+  if(displayPage)
+  {
       switch(page)
       {
         case 0:
@@ -242,6 +248,7 @@ void loop()
     }
     lastLCDUpdate = millis();
     clearLCD = true;
+    displayPage = false;
   }
   
   /* Regular Display Routine */
@@ -301,7 +308,7 @@ void displayCurrentTemp()
   if(heater)
     displayInfo("Temp: " + formatTemperature(currentTemp), "Heater On");
   else
-    displayInfo("Temp: " + formatTemperature(currentTemp) + " C", "Heater Off"); 
+    displayInfo("Temp: " + formatTemperature(currentTemp), "Heater Off"); 
 }
 
 
