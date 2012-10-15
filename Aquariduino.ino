@@ -214,36 +214,35 @@ void loop()
   }
   if(displayPage)
   {
-      switch(page)
+    switch(page)
+    {
+      case 0:
       {
-        case 0:
-        {
-         // displayInfo("Min/Max Temps:", String(floatToString(minTemp)) + "-" + String(floatToString(maxTemp)) + " C");
-          displayInfo("Min/Max Temps:", formatTemperatures(minTemp, maxTemp));
-          break;
-        }
-        case 1:
-        {
-          //displayInfo("Alert Temps:", String(floatToString(alertLowTemp)) + "-" + String(floatToString(alertHighTemp)) + " C");
-          displayInfo("Alert Temps:", formatTemperatures(alertLowTemp, alertHighTemp));
-          break; 
-        }
-        case 2:
-        {
-          //displayInfo("Temp Range:", String(floatToString(lowTemp)) + "-" + String(floatToString(highTemp)) + " C");
-          displayInfo("CFG Temp Range:", formatTemperatures(lowTemp, highTemp));
-          break; 
-        }
-        case 3:
-        {
-          displayInfo("Uptime (Secs):", String(millis() / second));
-          break;
-        }
-        case 4:
-        {
-          displayInfo("Heater Cycles:", String(heaterCycles));
-          break;
-        }
+       // displayInfo("Min/Max Temps:", String(floatToString(minTemp)) + "-" + String(floatToString(maxTemp)) + " C");
+        displayInfo("Min/Max Temps:", formatTemperatures(minTemp, maxTemp));
+        break;
+      }
+      case 1:
+      {
+        //displayInfo("Alert Temps:", String(floatToString(alertLowTemp)) + "-" + String(floatToString(alertHighTemp)) + " C");
+        displayInfo("Alert Temps:", formatTemperatures(alertLowTemp, alertHighTemp));
+        break; 
+      }
+      case 2:
+      {
+        //displayInfo("Temp Range:", String(floatToString(lowTemp)) + "-" + String(floatToString(highTemp)) + " C");
+        displayInfo("CFG Temp Range:", formatTemperatures(lowTemp, highTemp));
+        break; 
+      }
+      case 3:
+      {
+        displayInfo("Uptime (Secs):", String(millis() / second));
+        break;
+      }
+      case 4:
+      {
+        displayInfo("Heater Cycles:", String(heaterCycles));
+        break;
       }
     }
     lastLCDUpdate = millis();
