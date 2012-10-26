@@ -15,8 +15,8 @@
 #include <Adafruit_RGBLCDShield.h>
 
 /* For adding in the Ethernet or WiFi Shield */
-//#include <SPI.h>
-//#include <Ethernet.h>
+#include <SPI.h>
+#include <Ethernet.h>
 //#include <WiFi.h>
 
 /*
@@ -38,13 +38,19 @@
 #define ON 1
 #define OFF 0
 
-/* 
+/*
  * ---------
  * CONSTANTS
  * ---------
  */
- 
 const int second = 1000; //1000 ms = 1 second
+
+/* 
+ * -----------
+ * CONFIG OPTS
+ * -----------
+ */
+ 
 
  /* Pins */
 const int temperatureProbes = 7;
@@ -72,6 +78,10 @@ const float highTemp = 24.5;
 const float alertHighTemp = 27.0;
 const float alertLowTemp = 23.0;
 
+/* MAC and IP Addresss of Arduino */
+byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+byte ip[] = { 192, 168, 100, 11 };
+
 /*
  * -------
  * OBJECTS
@@ -90,6 +100,9 @@ DallasTemperature sensors(&oneWire);
 // Arrays to hold temperature devices 
 // DeviceAddress insideThermometer, outsideThermometer;
 DeviceAddress tankThermometer;
+
+EthernetServer webServer(80);
+EthernetClient webClient;
 
 /*
  * ----------------
@@ -124,13 +137,24 @@ int heaterCycles = 0;
 uint8_t buttons = 0;
 
 /* Switches from C to F for display */
-boolean displayCelsius = TRUE;
+boolean displayCelsius = true;
 
 //char serialInput = '\0';
 
 void setup()
 { 
   Serial.begin(9600); 
+
+  /*
+  while (!Serial)
+  {
+   ; // wait for serial port to connect. Needed for Leonardo only
+  }
+  */
+
+  // Start the Ethernet connection and the server:
+  Ethernet.begin(mac, ip);
+  webServer.begin();
 
   // set up the LCD's number of columns and rows: 
   lcd.begin(lcdColumns, lcdRows);
@@ -156,6 +180,7 @@ void setup()
 void loop()
 {
   buttons = lcd.readButtons(); 
+  webClient = webServer.available();
 
   currentMillis = millis();
   
@@ -256,6 +281,34 @@ void loop()
     displayCurrentTemp();
     lastLCDUpdate = millis();
   }
+  
+  /* Web-Server */
+  if (webClient)
+  {
+    webProcessInput();
+    webPrintRawStats();
+    webClient.stop();
+  }
+}
+
+void webProcessInput()
+{
+  char character;
+  boolean currentLineIsBlank = true;
+  while (webClient.connected())
+  {
+    if(webClient.available())
+    {
+      character = webClient.read();
+      if (character == '\n' && currentLineIsBlank)
+        return;
+      if (character == '\n')
+        currentLineIsBlank = true; 
+      else if (character != '\r')    
+        currentLineIsBlank = false;
+    }
+    
+  }
 }
 
 /*
@@ -273,6 +326,11 @@ void serialEvent()
   }  
 }
 */
+
+void webPrintRawStats()
+{
+    webClient.println("Temp:" + String(floatToString(currentTemp)) + " Heater:" + heater);
+}
 
 String formatTemperature(float temperature)
 {
