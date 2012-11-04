@@ -7,7 +7,6 @@
     LCD Shield: Analog Pins 4 & 5 (I2C Bus)
     Temperature 1 Wire Bus: 2
 */
-
 #include <Wire.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
@@ -18,6 +17,10 @@
 #include <SPI.h>
 #include <Ethernet.h>
 //#include <WiFi.h>
+
+/* For NTP */
+#include <Time.h> 
+#include <EthernetClient.h>
 
 /*
  * -------
@@ -43,7 +46,8 @@
  * CONSTANTS
  * ---------
  */
-const int second = 1000; //1000 ms = 1 second
+const int msInSecond = 1000; //1000 ms = 1 msInSecond
+const int ntpPacketSize = 48; // NTP time stamp is in the first 48 bytes of the message
 
 /* 
  * -----------
@@ -51,7 +55,6 @@ const int second = 1000; //1000 ms = 1 second
  * -----------
  */
  
-
  /* Pins */
 const int temperatureProbes = 7;
 const int heaterPin = A0;
@@ -59,12 +62,14 @@ const int heaterPin = A0;
 /* LCD */
 const int lcdColumns = 16;
 const int lcdRows = 2;
-const int maxPage = 4;
+const int maxPage = 5;
  
 /* Polling and update timeouts */
 const int sensorPollingInterval = 5;
 const int lcdUpdateInterval = 5;
+const int ntpSyncInterval = 60;
 const int alertTimeout = 5;
+
 
 /* 
    Temperature range to cycle heater in Celsius
@@ -81,6 +86,12 @@ const float alertLowTemp = 23.0;
 /* MAC and IP Addresss of Arduino */
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 byte ip[] = { 192, 168, 100, 11 };
+
+/* NTP Server */
+uint16_t ntpPort = 123;
+unsigned int ntpLocalPort = 8888;
+byte ntpServer[] = { 192, 168, 100, 2 };
+
 
 /*
  * -------
@@ -103,6 +114,7 @@ DeviceAddress tankThermometer;
 
 EthernetServer webServer(80);
 EthernetClient webClient;
+EthernetUDP udp;
 
 /*
  * ----------------
@@ -110,7 +122,7 @@ EthernetClient webClient;
  * ----------------
 */
 
-/* Number of milliseconds since bootup */
+/* Number of millimsInSeconds since bootup */
 unsigned long currentMillis = 0;
 
 /* Poll Timeouts for various things */
@@ -141,19 +153,25 @@ boolean displayCelsius = true;
 
 //char serialInput = '\0';
 
+/* NTP */
+byte ntpBuffer[ntpPacketSize];
+time_t time;
+
 void setup()
 { 
   Serial.begin(9600); 
-
   /*
   while (!Serial)
   {
    ; // wait for serial port to connect. Needed for Leonardo only
   }
   */
-
+  Serial.println("Aquariduino");
+  
   // Start the Ethernet connection and the server:
   Ethernet.begin(mac, ip);
+  
+  //Start the webserver
   webServer.begin();
 
   // set up the LCD's number of columns and rows: 
@@ -173,6 +191,17 @@ void setup()
   delay(2000);
   lcd.clear();
   
+  // Set the time sync source to NTP and sync
+  lcd.setCursor(0,0);
+  lcd.print("Syncing Time");
+  Serial.println("Syncing Time");
+  setSyncProvider(getUnixTimeFromNTP);
+  //while(timeStatus() == timeNotSet)
+  //  ; //Twiddle Thumbs
+  // Set how often clock is synced
+  setSyncInterval(ntpSyncInterval * msInSecond); 
+  
+  
   // Initialize Temp Sensor Library
   sensors.begin();
 }
@@ -183,9 +212,9 @@ void loop()
   webClient = webServer.available();
 
   currentMillis = millis();
-  
+   
   /* If it's been longer than the polling interval, poll sensors */
-  if(currentMillis - lastSensorPoll > sensorPollingInterval * second)
+  if(currentMillis - lastSensorPoll > sensorPollingInterval * msInSecond)
   {
     if(collectTemperatures())
       controlHeater();  
@@ -213,13 +242,13 @@ void loop()
       {
         lcd.setBacklight(OFF);
         backlight = false;
-        delay(second);
+        delay(msInSecond);
       }
       else
       {
         lcd.setBacklight(backlightColor);
         backlight = true;
-        delay(second); 
+        delay(msInSecond); 
       }
     }
     else if(buttons & BUTTON_LEFT)
@@ -261,13 +290,17 @@ void loop()
       }
       case 3:
       {
-        displayInfo("Uptime (Secs):", String(millis() / second));
+        displayInfo("Uptime (Secs):", String(millis() / msInSecond));
         break;
       }
       case 4:
       {
         displayInfo("Heater Cycles:", String(heaterCycles));
         break;
+      }
+      case 5:
+      {
+        displayInfo("Time:", String(printTime(now())));
       }
     }
     lastLCDUpdate = millis();
@@ -276,7 +309,7 @@ void loop()
   }
   
   /* Regular Display Routine */
-  else if(currentMillis - lastLCDUpdate > lcdUpdateInterval * second)
+  else if(currentMillis - lastLCDUpdate > lcdUpdateInterval * msInSecond)
   {
     displayCurrentTemp();
     lastLCDUpdate = millis();
@@ -438,8 +471,60 @@ void error(String message)
     for(int count = 0; count < alertTimeout; ++count)
     {
       lcd.setBacklight(RED);
-      delay(second);
+      delay(msInSecond);
       lcd.setBacklight(BLUE);
-      delay(second);
+      delay(msInSecond);
     }
 }
+
+unsigned long getUnixTimeFromNTP()
+{
+  const unsigned long seventy_years = 2208988800UL;
+  unsigned long highWord, lowWord, epoch;
+
+  Serial.println('Setting NTP Time');  
+  udp.begin(ntpLocalPort);
+  sendNTPPacket(ntpServer, ntpPort);
+  delay(msInSecond);
+  
+  if(udp.parsePacket())
+  {
+    udp.read(ntpBuffer, ntpPacketSize);
+    highWord = word(ntpBuffer[40], ntpBuffer[41]);
+    lowWord = word(ntpBuffer[42], ntpBuffer[43]);  
+    epoch = highWord << 16 | lowWord;
+    epoch = epoch - seventy_years;
+    Serial.println("Time is: " + epoch);
+    return epoch;
+  }
+  return 0; // return 0 if unable to get the time
+}
+
+unsigned long sendNTPPacket(byte *address, uint16_t port)
+{
+  // set all bytes in the buffer to 0
+  memset(ntpBuffer, 0, ntpPacketSize);
+  // Initialize values needed to form NTP request
+  // (see URL above for details on the packets)
+  ntpBuffer[0] = 0b11100011;   // LI, Version, Mode
+  ntpBuffer[1] = 0;     // Stratum, or type of clock
+  ntpBuffer[2] = 6;     // Polling Interval
+  ntpBuffer[3] = 0xEC;  // Peer Clock Precision
+  // 8 bytes of zero for Root Delay & Root Dispersion
+  ntpBuffer[12]  = 49;
+  ntpBuffer[13]  = 0x4E;
+  ntpBuffer[14]  = 49;
+  ntpBuffer[15]  = 52;
+
+  // all NTP fields have been given values, now
+  // you can send a packet requesting a timestamp:         
+  udp.beginPacket(address, port); //NTP requests are to port 123
+  udp.write(ntpBuffer,ntpPacketSize);
+  udp.endPacket(); 
+}
+
+String printTime(time_t time)
+{
+  return (String)hour(time) + ":" + (String)minute(time) + ":" + (String)second(time);
+}
+
