@@ -68,7 +68,7 @@ const int maxPage = 5;
 /* Polling and update timeouts */
 const int sensorPollingInterval = 5;
 const int lcdUpdateInterval = 5;
-const int ntpSyncInterval = 60;
+const int ntpSyncInterval = 300;
 const int alertTimeout = 5;
 
 /* 
@@ -205,11 +205,7 @@ void setup()
   lcd.print("Syncing Time");
   Serial.println("Syncing Time");
   setSyncProvider(getUnixTimeFromNTP);
-  //while(timeStatus() == timeNotSet)
-  //  ; //Twiddle Thumbs
-  // Set how often clock is synced
   setSyncInterval(ntpSyncInterval * msInSecond); 
-  
   
   // Initialize Temp Sensor Library
   sensors.begin();
@@ -230,10 +226,13 @@ void loop()
     else
       error("NO SENSORS");
     lastSensorPoll = currentMillis;
+    /* Lights */  
+    /* This is under the sensor poll section since otherwise the Arduino
+     * we becoming unresponsive for long periods of time.
+     * Need to figure out a better solution
+     */
+    controlLight();
   }
-
-  /* Lights */  
-  controlLight();
 
   /* Process button input */
   if (buttons)
