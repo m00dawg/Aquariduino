@@ -1,12 +1,12 @@
 /*
   Aquariduino v1.10
-  By: Tim Soderstrom
-
-  Pins used:
-    Heater Relay: A0
-    LCD Shield: Analog Pins 4 & 5 (I2C Bus)
-    Temperature 1 Wire Bus: 2
-*/
+ By: Tim Soderstrom
+ 
+ Pins used:
+ Heater Relay: A0
+ LCD Shield: Analog Pins 4 & 5 (I2C Bus)
+ Temperature 1 Wire Bus: 2
+ */
 #include <Wire.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
@@ -21,6 +21,9 @@
 /* For NTP */
 #include <Time.h> 
 #include <EthernetClient.h>
+
+/* Custom Functions */
+#include "functions.h"
 
 /*
  * -------
@@ -41,6 +44,7 @@
 #define ON 1
 #define OFF 0
 
+
 /*
  * ---------
  * CONSTANTS
@@ -54,8 +58,8 @@ const int ntpPacketSize = 48; // NTP time stamp is in the first 48 bytes of the 
  * CONFIG OPTS
  * -----------
  */
- 
- /* Pins */
+
+/* Pins */
 const int temperatureProbes = 7;
 const int heaterPin = A0;
 const int lightPin = A1;
@@ -64,7 +68,7 @@ const int lightPin = A1;
 const int lcdColumns = 16;
 const int lcdRows = 2;
 const int maxPage = 5;
- 
+
 /* Polling and update timeouts */
 const int sensorPollingInterval = 5;
 const int lcdUpdateInterval = 5;
@@ -72,31 +76,35 @@ const int ntpSyncInterval = 5;
 const int alertTimeout = 5;
 
 /* 
-   Temperature range to cycle heater in Celsius
-   lowTemp = Temp reached before heater turns on
-   highTemp = Temp reached before heater turns off
-   alertHighTemp = Tank too hot even with heater off
-   alertLowTemp = Tank too cold even with heater on
-*/
+ Temperature range to cycle heater in Celsius
+ lowTemp = Temp reached before heater turns on
+ highTemp = Temp reached before heater turns off
+ alertHighTemp = Tank too hot even with heater off
+ alertLowTemp = Tank too cold even with heater on
+ */
 const float lowTemp = 24.25;
 const float highTemp = 24.5;
 const float alertHighTemp = 27.0;
 const float alertLowTemp = 23.0;
 
 /* 
-  Light Time Range
-  Start Hour, Start Minute, Stop Hour, Stop Minute
-*/
-const int lightSchedule[] = { 15, 00, 02, 00 }; //9am - 9pm CST
+ Light Time Range
+ Start Hour, Start Minute, Stop Hour, Stop Minute
+ */
+const int lightSchedule[] = { 
+  14, 00, 02, 00 }; //9am - 9pm CST
 
 /* MAC and IP Addresss of Arduino */
-byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-byte ip[] = { 192, 168, 100, 11 };
+byte mac[] = { 
+  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+byte ip[] = { 
+  192, 168, 100, 11 };
 
 /* NTP Server */
 uint16_t ntpPort = 123;
 unsigned int ntpLocalPort = 8888;
-byte ntpServer[] = { 192, 168, 100, 2 };
+byte ntpServer[] = { 
+  192, 168, 100, 2 };
 
 
 /*
@@ -122,11 +130,20 @@ EthernetServer webServer(80);
 EthernetClient webClient;
 EthernetUDP udp;
 
+DeviceOnSchedule light = 
+{
+  { 
+    14, 00, 02, 00   }
+  , // 8am - 9pm CST
+  1,                  // Pin 1
+  false               // State
+};            
+
 /*
  * ----------------
  * STATUS VARIABLES
  * ----------------
-*/
+ */
 
 /* Number of millimsInSeconds since bootup */
 unsigned long currentMillis = 0;
@@ -152,7 +169,7 @@ boolean heater = FALSE;
 int heaterCycles = 0;
 
 /* Light Status */
-boolean light = FALSE;
+//boolean light = FALSE;
 
 /* Variable to store buttons */
 uint8_t buttons = 0;
@@ -171,15 +188,15 @@ void setup()
   Serial.begin(9600); 
   /*
   while (!Serial)
-  {
+   {
    ; // wait for serial port to connect. Needed for Leonardo only
-  }
-  */
+   }
+   */
   Serial.println("Aquariduino");
-  
+
   // Start the Ethernet connection and the server:
   Ethernet.begin(mac, ip);
-  
+
   //Start the webserver
   webServer.begin();
 
@@ -187,7 +204,7 @@ void setup()
   lcd.begin(lcdColumns, lcdRows);
 
   /* Turn off header, since we don't know what's going on until
-      we poll the temperature sensor */
+   we poll the temperature sensor */
   pinMode(heaterPin, OUTPUT);
   digitalWrite(heaterPin, LOW);
 
@@ -199,14 +216,14 @@ void setup()
   lcd.print("v1.10");
   delay(2000);
   lcd.clear();
-  
+
   // Set the time sync source to NTP and sync
   lcd.setCursor(0,0);
   lcd.print("Syncing Time");
   Serial.println("Syncing Time");
   setSyncProvider(getUnixTimeFromNTP);
   setSyncInterval(ntpSyncInterval * msInSecond); 
-  
+
   // Initialize Temp Sensor Library
   sensors.begin();
 }
@@ -217,7 +234,7 @@ void loop()
   webClient = webServer.available();
 
   currentMillis = millis();
-   
+
   /* If it's been longer than the polling interval, poll sensors */
   if(currentMillis - lastSensorPoll > sensorPollingInterval * msInSecond)
   {
@@ -226,12 +243,12 @@ void loop()
     else
       error("NO SENSORS");
     lastSensorPoll = currentMillis;
-    /* Lights */  
+    /* Lights */
     /* This is under the sensor poll section since otherwise the Arduino
      * we becoming unresponsive for long periods of time.
      * Need to figure out a better solution
      */
-    controlLight();
+    controlDeviceOnSchedule(light);
   }
 
   /* Process button input */
@@ -281,35 +298,35 @@ void loop()
   {
     switch(page)
     {
-      case 0:
+    case 0:
       {
-       // displayInfo("Min/Max Temps:", String(floatToString(minTemp)) + "-" + String(floatToString(maxTemp)) + " C");
+        // displayInfo("Min/Max Temps:", String(floatToString(minTemp)) + "-" + String(floatToString(maxTemp)) + " C");
         displayInfo("Min/Max Temps:", formatTemperatures(minTemp, maxTemp));
         break;
       }
-      case 1:
+    case 1:
       {
         //displayInfo("Alert Temps:", String(floatToString(alertLowTemp)) + "-" + String(floatToString(alertHighTemp)) + " C");
         displayInfo("Alert Temps:", formatTemperatures(alertLowTemp, alertHighTemp));
         break; 
       }
-      case 2:
+    case 2:
       {
         //displayInfo("Temp Range:", String(floatToString(lowTemp)) + "-" + String(floatToString(highTemp)) + " C");
         displayInfo("CFG Temp Range:", formatTemperatures(lowTemp, highTemp));
         break; 
       }
-      case 3:
+    case 3:
       {
         displayInfo("Uptime (Secs):", String(millis() / msInSecond));
         break;
       }
-      case 4:
+    case 4:
       {
         displayInfo("Heater Cycles:", String(heaterCycles));
         break;
       }
-      case 5:
+    case 5:
       {
         displayInfo("Time:", String(printTime(now())));
       }
@@ -318,14 +335,14 @@ void loop()
     clearLCD = true;
     displayPage = false;
   }
-  
+
   /* Regular Display Routine */
   else if(currentMillis - lastLCDUpdate > lcdUpdateInterval * msInSecond)
   {
     displayCurrentTemp();
     lastLCDUpdate = millis();
   }
-  
+
   /* Web-Server */
   if (webClient)
   {
@@ -351,42 +368,42 @@ void webProcessInput()
       else if (character != '\r')    
         currentLineIsBlank = false;
     }
-    
+
   }
 }
 
 /*
 void serialEvent()
-{
-  while(Serial.available() > 0)
-     serialInput = Serial.read(); 
-  if(serialInput == 'P')
-  {
-    serialInput = '\0';
-    Serial.print("WaterTemp:");
-    Serial.print(currentTemp, DEC);
-    Serial.print(" Heater:");
-    Serial.println(heater, DEC);
-  }  
-}
-*/
+ {
+ while(Serial.available() > 0)
+ serialInput = Serial.read(); 
+ if(serialInput == 'P')
+ {
+ serialInput = '\0';
+ Serial.print("WaterTemp:");
+ Serial.print(currentTemp, DEC);
+ Serial.print(" Heater:");
+ Serial.println(heater, DEC);
+ }  
+ }
+ */
 
 void webPrintRawStats()
 {
-    webClient.println("Temp:" + String(floatToString(currentTemp)) + " Heater:" + heater + " Light:" + light);
+  webClient.println("Temp:" + String(floatToString(currentTemp)) + " Heater:" + heater + " Light:" + light);
 }
 
 String formatTemperature(float temperature)
 {
   if(displayCelsius)
-   return String(floatToString(temperature)) + "C";
+    return String(floatToString(temperature)) + "C";
   return String(floatToString(sensors.toFahrenheit(temperature))) + "F";
 }
 
 String formatTemperatures(float temp1, float temp2)
 {
   if(displayCelsius)
-   return String(floatToString(temp1)) + "-" + String(floatToString(temp2)) + " C";
+    return String(floatToString(temp1)) + "-" + String(floatToString(temp2)) + " C";
   return String(floatToString(sensors.toFahrenheit(temp1)))
     + "-" + String(floatToString(sensors.toFahrenheit(temp2))) + "F"; 
 }
@@ -408,12 +425,12 @@ void displayCurrentTemp()
   }
   /*
   if(heater)
-    displayInfo("Temp: " + formatTemperature(currentTemp), "Heater On");
-  else
-    displayInfo("Temp: " + formatTemperature(currentTemp), "Heater Off"); 
-  */
+   displayInfo("Temp: " + formatTemperature(currentTemp), "Heater On");
+   else
+   displayInfo("Temp: " + formatTemperature(currentTemp), "Heater Off"); 
+   */
   displayInfo("Temp: " + formatTemperature(currentTemp), 
-    "H:" + (String)heater + " L:" + (String)light);
+  "H:" + (String)heater + " L:" + (String)light);
 }
 
 
@@ -463,51 +480,51 @@ boolean collectTemperatures()
 
 void controlHeater()
 {
-    /* If temperature is too high, turn off heater */
-    if(currentTemp > highTemp)
-    {
-      digitalWrite(heaterPin, LOW);
-      heater = false;
-      return;
-    }
-    /* If the temperature is too low, turn on heater */
-    if(currentTemp < lowTemp)
-    {
-      digitalWrite(heaterPin, HIGH);
-      if(heater)
-        ++heaterCycles;
-      heater = true;
-    }
+  /* If temperature is too high, turn off heater */
+  if(currentTemp > highTemp)
+  {
+    digitalWrite(heaterPin, LOW);
+    heater = false;
+    return;
+  }
+  /* If the temperature is too low, turn on heater */
+  if(currentTemp < lowTemp)
+  {
+    digitalWrite(heaterPin, HIGH);
+    if(heater)
+      ++heaterCycles;
+    heater = true;
+  }
 }
-
+/*
 void controlLight()
-{
-  /* Light Schedule */
-  if(hour(now()) >= lightSchedule[0] & 
-     minute(now()) >= lightSchedule[1] &
-     hour(now()) <= lightSchedule[2] & 
-     minute(now()) <= lightSchedule[3])
-  {
-    digitalWrite(lightPin, HIGH);
-    light = true;
-  }
-  else
-  {
-    digitalWrite(lightPin, LOW);
-    light = false;
-  }
-}
+ {
+ if(hour(now()) >= lightSchedule[0] & 
+ minute(now()) >= lightSchedule[1] &
+ hour(now()) <= lightSchedule[2] & 
+ minute(now()) <= lightSchedule[3])
+ {
+ digitalWrite(lightPin, HIGH);
+ light = true;
+ }
+ else
+ {
+ digitalWrite(lightPin, LOW);
+ light = false;
+ }
+ }
+ */
 
 void error(String message)
 {
-    displayInfo("**** ERROR ****", message);
-    for(int count = 0; count < alertTimeout; ++count)
-    {
-      lcd.setBacklight(RED);
-      delay(msInSecond);
-      lcd.setBacklight(BLUE);
-      delay(msInSecond);
-    }
+  displayInfo("**** ERROR ****", message);
+  for(int count = 0; count < alertTimeout; ++count)
+  {
+    lcd.setBacklight(RED);
+    delay(msInSecond);
+    lcd.setBacklight(BLUE);
+    delay(msInSecond);
+  }
 }
 
 unsigned long getUnixTimeFromNTP()
@@ -515,12 +532,11 @@ unsigned long getUnixTimeFromNTP()
   const unsigned long seventy_years = 2208988800UL;
   unsigned long highWord, lowWord, epoch;
 
-  Serial.println('Setting NTP Time');  
   memset(ntpBuffer, 0, ntpPacketSize);
   udp.begin(ntpLocalPort);
   sendNTPPacket(ntpServer, ntpPort);
   delay(msInSecond);
-  
+
   if(udp.parsePacket())
   {
     udp.read(ntpBuffer, ntpPacketSize);
@@ -528,7 +544,6 @@ unsigned long getUnixTimeFromNTP()
     lowWord = word(ntpBuffer[42], ntpBuffer[43]);  
     epoch = highWord << 16 | lowWord;
     epoch = epoch - seventy_years;
-    Serial.println("Time is: " + epoch);
     return epoch;
   }
   return 0; // return 0 if unable to get the time
@@ -561,4 +576,5 @@ String printTime(time_t time)
 {
   return (String)hour(time) + ":" + (String)minute(time) + ":" + (String)second(time);
 }
+
 
