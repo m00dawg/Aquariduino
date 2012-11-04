@@ -374,7 +374,7 @@ void serialEvent()
 
 void webPrintRawStats()
 {
-    webClient.println("Temp:" + String(floatToString(currentTemp)) + " Heater:" + heater + " Light: " + light);
+    webClient.println("Temp:" + String(floatToString(currentTemp)) + " Heater:" + heater + " Light:" + light);
 }
 
 String formatTemperature(float temperature)
