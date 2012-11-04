@@ -1,5 +1,5 @@
 /*
-  Aquariduino v1.00
+  Aquariduino v1.10
   By: Tim Soderstrom
 
   Pins used:
@@ -58,6 +58,7 @@ const int ntpPacketSize = 48; // NTP time stamp is in the first 48 bytes of the 
  /* Pins */
 const int temperatureProbes = 7;
 const int heaterPin = A0;
+const int lightPin = A1;
 
 /* LCD */
 const int lcdColumns = 16;
@@ -70,7 +71,6 @@ const int lcdUpdateInterval = 5;
 const int ntpSyncInterval = 60;
 const int alertTimeout = 5;
 
-
 /* 
    Temperature range to cycle heater in Celsius
    lowTemp = Temp reached before heater turns on
@@ -82,6 +82,12 @@ const float lowTemp = 24.25;
 const float highTemp = 24.5;
 const float alertHighTemp = 27.0;
 const float alertLowTemp = 23.0;
+
+/* 
+  Light Time Range
+  Start Hour, Start Minute, Stop Hour, Stop Minute
+*/
+const int lightSchedule[] = { 15, 00, 02, 00 }; //9am - 9pm CST
 
 /* MAC and IP Addresss of Arduino */
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
@@ -145,6 +151,9 @@ int page = 0;
 boolean heater = FALSE;
 int heaterCycles = 0;
 
+/* Light Status */
+boolean light = FALSE;
+
 /* Variable to store buttons */
 uint8_t buttons = 0;
 
@@ -187,7 +196,7 @@ void setup()
   lcd.setCursor(0,0);
   lcd.print("Aquariduino");
   lcd.setCursor(0,1);
-  lcd.print("v1.00");
+  lcd.print("v1.10");
   delay(2000);
   lcd.clear();
   
@@ -222,7 +231,10 @@ void loop()
       error("NO SENSORS");
     lastSensorPoll = currentMillis;
   }
-  
+
+  /* Lights */  
+  controlLight();
+
   /* Process button input */
   if (buttons)
   {
@@ -362,7 +374,7 @@ void serialEvent()
 
 void webPrintRawStats()
 {
-    webClient.println("Temp:" + String(floatToString(currentTemp)) + " Heater:" + heater);
+    webClient.println("Temp:" + String(floatToString(currentTemp)) + " Heater:" + heater + " Light: " + light);
 }
 
 String formatTemperature(float temperature)
@@ -394,11 +406,15 @@ void displayCurrentTemp()
       lcd.setBacklight(VIOLET);
     else if(currentTemp < alertLowTemp)
       lcd.setBacklight(BLUE);
-  }   
+  }
+  /*
   if(heater)
     displayInfo("Temp: " + formatTemperature(currentTemp), "Heater On");
   else
     displayInfo("Temp: " + formatTemperature(currentTemp), "Heater Off"); 
+  */
+  displayInfo("Temp: " + formatTemperature(currentTemp), 
+    "H:" + (String)heater + " L:" + (String)light);
 }
 
 
@@ -463,6 +479,24 @@ void controlHeater()
         ++heaterCycles;
       heater = true;
     }
+}
+
+void controlLight()
+{
+  /* Light Schedule */
+  if(hour(now()) >= lightSchedule[0] & 
+     minute(now()) >= lightSchedule[1] &
+     hour(now()) <= lightSchedule[2] & 
+     minute(now()) <= lightSchedule[3])
+  {
+    digitalWrite(lightPin, HIGH);
+    light = true;
+  }
+  else
+  {
+    digitalWrite(lightPin, LOW);
+    light = false;
+  }
 }
 
 void error(String message)
