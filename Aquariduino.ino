@@ -68,7 +68,7 @@ const int maxPage = 5;
 /* Polling and update timeouts */
 const int sensorPollingInterval = 5;
 const int lcdUpdateInterval = 5;
-const int ntpSyncInterval = 300;
+const int ntpSyncInterval = 5;
 const int alertTimeout = 5;
 
 /* 
@@ -516,6 +516,7 @@ unsigned long getUnixTimeFromNTP()
   unsigned long highWord, lowWord, epoch;
 
   Serial.println('Setting NTP Time');  
+  memset(ntpBuffer, 0, ntpPacketSize);
   udp.begin(ntpLocalPort);
   sendNTPPacket(ntpServer, ntpPort);
   delay(msInSecond);
