@@ -1,7 +1,9 @@
 /*
- * -------
- * STRUCTS
- * -------
+ * Structure to handle any device on a schedule
+ * That is a device that is on or off depending on the time
+ *
+ * TODO: Overrides for manual control where it won't mess up
+ * the schedule
  */
 struct DeviceOnSchedule{
   int schedule[4];
@@ -9,6 +11,9 @@ struct DeviceOnSchedule{
   boolean state;
 };
 
+/*
+ * Function to control devices on a schedule
+ */
 void controlDeviceOnSchedule(DeviceOnSchedule device)
 {
   if(hour(now()) >= device.schedule[0] & 

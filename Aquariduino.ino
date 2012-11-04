@@ -1,5 +1,5 @@
 /*
-  Aquariduino v1.10
+  Aquariduino v1.15
  By: Tim Soderstrom
  
  Pins used:
@@ -23,7 +23,7 @@
 #include <EthernetClient.h>
 
 /* Custom Functions */
-#include "functions.h"
+#include "devices.h"
 
 /*
  * -------
@@ -132,11 +132,9 @@ EthernetUDP udp;
 
 DeviceOnSchedule light = 
 {
-  { 
-    14, 00, 02, 00   }
-  , // 8am - 9pm CST
-  1,                  // Pin 1
-  false               // State
+  { 14, 00, 02, 00   }, // 8am - 9pm CST
+  1,                    // Pin 1
+  false                 // State
 };            
 
 /*
@@ -168,9 +166,6 @@ int page = 0;
 boolean heater = FALSE;
 int heaterCycles = 0;
 
-/* Light Status */
-//boolean light = FALSE;
-
 /* Variable to store buttons */
 uint8_t buttons = 0;
 
@@ -185,14 +180,14 @@ time_t time;
 
 void setup()
 { 
-  Serial.begin(9600); 
+  //Serial.begin(9600); 
   /*
   while (!Serial)
    {
    ; // wait for serial port to connect. Needed for Leonardo only
    }
    */
-  Serial.println("Aquariduino");
+  //Serial.println("Aquariduino");
 
   // Start the Ethernet connection and the server:
   Ethernet.begin(mac, ip);
@@ -220,7 +215,7 @@ void setup()
   // Set the time sync source to NTP and sync
   lcd.setCursor(0,0);
   lcd.print("Syncing Time");
-  Serial.println("Syncing Time");
+  //Serial.println("Syncing Time");
   setSyncProvider(getUnixTimeFromNTP);
   setSyncInterval(ntpSyncInterval * msInSecond); 
 
@@ -300,19 +295,16 @@ void loop()
     {
     case 0:
       {
-        // displayInfo("Min/Max Temps:", String(floatToString(minTemp)) + "-" + String(floatToString(maxTemp)) + " C");
         displayInfo("Min/Max Temps:", formatTemperatures(minTemp, maxTemp));
         break;
       }
     case 1:
       {
-        //displayInfo("Alert Temps:", String(floatToString(alertLowTemp)) + "-" + String(floatToString(alertHighTemp)) + " C");
         displayInfo("Alert Temps:", formatTemperatures(alertLowTemp, alertHighTemp));
         break; 
       }
     case 2:
       {
-        //displayInfo("Temp Range:", String(floatToString(lowTemp)) + "-" + String(floatToString(highTemp)) + " C");
         displayInfo("CFG Temp Range:", formatTemperatures(lowTemp, highTemp));
         break; 
       }
@@ -352,26 +344,6 @@ void loop()
   }
 }
 
-void webProcessInput()
-{
-  char character;
-  boolean currentLineIsBlank = true;
-  while (webClient.connected())
-  {
-    if(webClient.available())
-    {
-      character = webClient.read();
-      if (character == '\n' && currentLineIsBlank)
-        return;
-      if (character == '\n')
-        currentLineIsBlank = true; 
-      else if (character != '\r')    
-        currentLineIsBlank = false;
-    }
-
-  }
-}
-
 /*
 void serialEvent()
  {
@@ -387,194 +359,4 @@ void serialEvent()
  }  
  }
  */
-
-void webPrintRawStats()
-{
-  webClient.println("Temp:" + String(floatToString(currentTemp)) + " Heater:" + heater + " Light:" + light);
-}
-
-String formatTemperature(float temperature)
-{
-  if(displayCelsius)
-    return String(floatToString(temperature)) + "C";
-  return String(floatToString(sensors.toFahrenheit(temperature))) + "F";
-}
-
-String formatTemperatures(float temp1, float temp2)
-{
-  if(displayCelsius)
-    return String(floatToString(temp1)) + "-" + String(floatToString(temp2)) + " C";
-  return String(floatToString(sensors.toFahrenheit(temp1)))
-    + "-" + String(floatToString(sensors.toFahrenheit(temp2))) + "F"; 
-}
-
-void displayCurrentTemp()
-{
-  if(backlight)
-  {
-    if(currentTemp > alertHighTemp)
-      lcd.setBacklight(RED);
-    else if(currentTemp >= highTemp)
-      lcd.setBacklight(YELLOW);
-    else if(currentTemp > lowTemp && currentTemp < highTemp)
-      lcd.setBacklight(GREEN);
-    else if(currentTemp <= lowTemp)
-      lcd.setBacklight(VIOLET);
-    else if(currentTemp < alertLowTemp)
-      lcd.setBacklight(BLUE);
-  }
-  /*
-  if(heater)
-   displayInfo("Temp: " + formatTemperature(currentTemp), "Heater On");
-   else
-   displayInfo("Temp: " + formatTemperature(currentTemp), "Heater Off"); 
-   */
-  displayInfo("Temp: " + formatTemperature(currentTemp), 
-  "H:" + (String)heater + " L:" + (String)light);
-}
-
-
-void displayInfo(String topText, String bottomText)
-{  
-  if(clearLCD)
-  {
-    lcd.clear();
-    clearLCD = false;
-  }
-  lcd.setCursor(0,0);
-  lcd.print(padString(topText));
-  lcd.setCursor(0,1);
-  lcd.print(padString(bottomText));
-}
-
-String padString(String value)
-{
-  char padding[lcdColumns - value.length()];
-  for(int count = 0; count < sizeof(padding); ++count)
-    padding[count] = ' ';
-  return String(value) + String(padding);
-}
-
-String floatToString(float value)
-{
-  char result[13];
-  dtostrf(value, 4, 1, result);
-  return result;
-}
-
-boolean collectTemperatures()
-{
-  sensors.requestTemperatures();
-  if(sensors.getAddress(tankThermometer, 0))
-  {
-    currentTemp = sensors.getTempC(tankThermometer);
-    /* Check to see if we hit a new low or high temp */
-    if(currentTemp > maxTemp)
-      maxTemp = currentTemp;
-    if(currentTemp < minTemp)
-      minTemp = currentTemp;
-    return true;
-  }
-  return false;
-}
-
-void controlHeater()
-{
-  /* If temperature is too high, turn off heater */
-  if(currentTemp > highTemp)
-  {
-    digitalWrite(heaterPin, LOW);
-    heater = false;
-    return;
-  }
-  /* If the temperature is too low, turn on heater */
-  if(currentTemp < lowTemp)
-  {
-    digitalWrite(heaterPin, HIGH);
-    if(heater)
-      ++heaterCycles;
-    heater = true;
-  }
-}
-/*
-void controlLight()
- {
- if(hour(now()) >= lightSchedule[0] & 
- minute(now()) >= lightSchedule[1] &
- hour(now()) <= lightSchedule[2] & 
- minute(now()) <= lightSchedule[3])
- {
- digitalWrite(lightPin, HIGH);
- light = true;
- }
- else
- {
- digitalWrite(lightPin, LOW);
- light = false;
- }
- }
- */
-
-void error(String message)
-{
-  displayInfo("**** ERROR ****", message);
-  for(int count = 0; count < alertTimeout; ++count)
-  {
-    lcd.setBacklight(RED);
-    delay(msInSecond);
-    lcd.setBacklight(BLUE);
-    delay(msInSecond);
-  }
-}
-
-unsigned long getUnixTimeFromNTP()
-{
-  const unsigned long seventy_years = 2208988800UL;
-  unsigned long highWord, lowWord, epoch;
-
-  memset(ntpBuffer, 0, ntpPacketSize);
-  udp.begin(ntpLocalPort);
-  sendNTPPacket(ntpServer, ntpPort);
-  delay(msInSecond);
-
-  if(udp.parsePacket())
-  {
-    udp.read(ntpBuffer, ntpPacketSize);
-    highWord = word(ntpBuffer[40], ntpBuffer[41]);
-    lowWord = word(ntpBuffer[42], ntpBuffer[43]);  
-    epoch = highWord << 16 | lowWord;
-    epoch = epoch - seventy_years;
-    return epoch;
-  }
-  return 0; // return 0 if unable to get the time
-}
-
-unsigned long sendNTPPacket(byte *address, uint16_t port)
-{
-  // set all bytes in the buffer to 0
-  memset(ntpBuffer, 0, ntpPacketSize);
-  // Initialize values needed to form NTP request
-  // (see URL above for details on the packets)
-  ntpBuffer[0] = 0b11100011;   // LI, Version, Mode
-  ntpBuffer[1] = 0;     // Stratum, or type of clock
-  ntpBuffer[2] = 6;     // Polling Interval
-  ntpBuffer[3] = 0xEC;  // Peer Clock Precision
-  // 8 bytes of zero for Root Delay & Root Dispersion
-  ntpBuffer[12]  = 49;
-  ntpBuffer[13]  = 0x4E;
-  ntpBuffer[14]  = 49;
-  ntpBuffer[15]  = 52;
-
-  // all NTP fields have been given values, now
-  // you can send a packet requesting a timestamp:         
-  udp.beginPacket(address, port); //NTP requests are to port 123
-  udp.write(ntpBuffer,ntpPacketSize);
-  udp.endPacket(); 
-}
-
-String printTime(time_t time)
-{
-  return (String)hour(time) + ":" + (String)minute(time) + ":" + (String)second(time);
-}
-
 
