@@ -1,6 +1,6 @@
 unsigned long getUnixTimeFromNTP()
 {
-  const unsigned long seventy_years = 2208988800UL;
+  const unsigned long seventyYears = 2208988800UL;
   unsigned long highWord, lowWord, epoch;
 
   memset(ntpBuffer, 0, ntpPacketSize);
@@ -14,7 +14,7 @@ unsigned long getUnixTimeFromNTP()
     highWord = word(ntpBuffer[40], ntpBuffer[41]);
     lowWord = word(ntpBuffer[42], ntpBuffer[43]);  
     epoch = highWord << 16 | lowWord;
-    epoch = epoch - seventy_years;
+    epoch = epoch - seventyYears + timeZoneOffset;
     return epoch;
   }
   return 0; // return 0 if unable to get the time

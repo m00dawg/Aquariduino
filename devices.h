@@ -16,6 +16,7 @@ struct DeviceOnSchedule{
  */
 void controlDeviceOnSchedule(DeviceOnSchedule device)
 {
+  
   if(hour(now()) >= device.schedule[0] & 
     minute(now()) >= device.schedule[1] &
     hour(now()) <= device.schedule[2] & 

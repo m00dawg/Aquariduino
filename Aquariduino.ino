@@ -87,25 +87,18 @@ const float highTemp = 24.5;
 const float alertHighTemp = 27.0;
 const float alertLowTemp = 23.0;
 
-/* 
- Light Time Range
- Start Hour, Start Minute, Stop Hour, Stop Minute
- */
-const int lightSchedule[] = { 
-  14, 00, 02, 00 }; //9am - 9pm CST
-
 /* MAC and IP Addresss of Arduino */
 byte mac[] = { 
   0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 byte ip[] = { 
   192, 168, 100, 11 };
 
-/* NTP Server */
+/* NTP Server ^ Time Handling */
 uint16_t ntpPort = 123;
 unsigned int ntpLocalPort = 8888;
 byte ntpServer[] = { 
   192, 168, 100, 2 };
-
+const long timeZoneOffset = -21600; // UTC-6
 
 /*
  * -------
@@ -133,7 +126,7 @@ EthernetUDP udp;
 DeviceOnSchedule light = 
 {
   { 14, 00, 02, 00   }, // 8am - 9pm CST
-  1,                    // Pin 1
+  A1,                    // Pin 1
   false                 // State
 };            
 
