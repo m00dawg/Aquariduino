@@ -11,24 +11,23 @@ struct DeviceOnSchedule{
   boolean state;
 };
 
+
+//Convert given times to secnds, then compare with
+//elapsedSecsToday() - Number of seconds since midnight
+
+//void followSchedule(
+
 /*
  * Function to control devices on a schedule
  */
-void controlDeviceOnSchedule(DeviceOnSchedule device)
+void deviceOn(DeviceOnSchedule device)
 {
-  
-  if(hour(now()) >= device.schedule[0] & 
-    minute(now()) >= device.schedule[1] &
-    hour(now()) <= device.schedule[2] & 
-    minute(now()) <= device.schedule[3])
-  {
-    digitalWrite(device.pin, HIGH);
-    device.state = true; 
-  }
-  else
-  {
-    digitalWrite(device.pin, LOW);
-    device.state = false; 
-  }
+  digitalWrite(device.pin, HIGH);
+  device.state = true; 
 }
 
+void deviceOff(DeviceOnSchedule device)
+{
+    digitalWrite(device.pin, LOW);
+    device.state = false; 
+}

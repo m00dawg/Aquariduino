@@ -4,7 +4,6 @@ unsigned long getUnixTimeFromNTP()
   unsigned long highWord, lowWord, epoch;
 
   memset(ntpBuffer, 0, ntpPacketSize);
-  udp.begin(ntpLocalPort);
   sendNTPPacket(ntpServer, ntpPort);
   delay(msInSecond);
 
@@ -48,4 +47,8 @@ String printTime(time_t time)
   return (String)hour(time) + ":" + (String)minute(time) + ":" + (String)second(time);
 }
 
-
+void syncTime()
+{
+  displayInfo("Syncing Time", "");
+  setTime(getUnixTimeFromNTP());
+}

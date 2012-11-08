@@ -1,5 +1,5 @@
 /*
-  Aquariduino v1.15
+  Aquariduino v1.20
  By: Tim Soderstrom
  
  Pins used:
@@ -18,8 +18,9 @@
 #include <Ethernet.h>
 //#include <WiFi.h>
 
-/* For NTP */
-#include <Time.h> 
+/* For Timekeeping using NTP */
+#include <Time.h>
+#include <TimeAlarms.h>
 #include <EthernetClient.h>
 
 /* Custom Functions */
@@ -72,7 +73,6 @@ const int maxPage = 5;
 /* Polling and update timeouts */
 const int sensorPollingInterval = 5;
 const int lcdUpdateInterval = 5;
-const int ntpSyncInterval = 5;
 const int alertTimeout = 5;
 
 /* 
@@ -125,7 +125,7 @@ EthernetUDP udp;
 
 DeviceOnSchedule light = 
 {
-  { 14, 00, 02, 00   }, // 8am - 9pm CST
+  { 8, 0, 21, 0 }, // 8am - 9pm CST
   A1,                    // Pin 1
   false                 // State
 };            
@@ -185,6 +185,9 @@ void setup()
   // Start the Ethernet connection and the server:
   Ethernet.begin(mac, ip);
 
+  //Start UDP for NTP
+  udp.begin(ntpLocalPort);
+
   //Start the webserver
   webServer.begin();
 
@@ -201,16 +204,16 @@ void setup()
   lcd.setCursor(0,0);
   lcd.print("Aquariduino");
   lcd.setCursor(0,1);
-  lcd.print("v1.10");
+  lcd.print("v1.20");
   delay(2000);
   lcd.clear();
 
-  // Set the time sync source to NTP and sync
-  lcd.setCursor(0,0);
-  lcd.print("Syncing Time");
-  //Serial.println("Syncing Time");
-  setSyncProvider(getUnixTimeFromNTP);
-  setSyncInterval(ntpSyncInterval * msInSecond); 
+  //Sync to NTP
+  syncTime();
+  
+  // Setup Alarms
+  Alarm.alarmRepeat(light.schedule[0], light.schedule[1], 0, lightsOn);
+  Alarm.alarmRepeat(light.schedule[2], light.schedule[3], 0, lightsOff);
 
   // Initialize Temp Sensor Library
   sensors.begin();
@@ -231,12 +234,6 @@ void loop()
     else
       error("NO SENSORS");
     lastSensorPoll = currentMillis;
-    /* Lights */
-    /* This is under the sensor poll section since otherwise the Arduino
-     * we becoming unresponsive for long periods of time.
-     * Need to figure out a better solution
-     */
-    controlDeviceOnSchedule(light);
   }
 
   /* Process button input */
@@ -251,6 +248,10 @@ void loop()
       displayCurrentTemp();
       lastLCDUpdate = millis();
       clearLCD = true;
+    }
+    else if (buttons & BUTTON_DOWN)
+    {
+      syncTime();
     }
     else if (buttons & BUTTON_SELECT)
     {
@@ -335,6 +336,16 @@ void loop()
     webPrintRawStats();
     webClient.stop();
   }
+}
+
+void lightsOn()
+{
+   deviceOn(light);
+}
+
+void lightsOff()
+{
+   deviceOff(light);
 }
 
 /*

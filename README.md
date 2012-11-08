@@ -16,6 +16,9 @@ Libraries:
 - OneWire (http://www.pjrc.com/teensy/td_libs_OneWire.html)
 - DallasTemperature (http://milesburton.com/Dallas_Temperature_Control_Library)
 - Adafruit RGB LCD Shield (https://github.com/adafruit/Adafruit-RGB-LCD-Shield-Library)
+- Time and TimeAlarms (http://www.arduino.cc/playground/Code/Time)
+    Change Line 25 of TimeAlarms.cpp to be:
+        "#include <Arduino.h>"
 
 
 Pins Used: See Pins.txt
