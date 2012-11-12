@@ -1,3 +1,5 @@
+#include <Time.h>
+
 /*
  * Structure to handle any device on a schedule
  * That is a device that is on or off depending on the time
@@ -11,11 +13,23 @@ struct DeviceOnSchedule{
   boolean state;
 };
 
+void checkSchedule(DeviceOnSchedule device)
+{
+  int startSeconds = device.schedule[0] * 3600 + device.schedule[1] * 60;
+  int stopSeconds = device.schedule[1] * 3600 + device.schedule[2] * 60;
+  int currentSeconds = elapsedSecsToday(now());
+  if(currentSeconds > startSeconds & stopSeconds > currentSeconds)
+  {
+    digitalWrite(device.pin, HIGH);
+    device.state = true;
+  }
+  else
+  {
+    digitalWrite(device.pin, LOW);
+    device.state = false;    
+  }
+}
 
-//Convert given times to secnds, then compare with
-//elapsedSecsToday() - Number of seconds since midnight
-
-//void followSchedule(
 
 /*
  * Function to control devices on a schedule
@@ -31,3 +45,5 @@ void deviceOff(DeviceOnSchedule device)
     digitalWrite(device.pin, LOW);
     device.state = false; 
 }
+
+

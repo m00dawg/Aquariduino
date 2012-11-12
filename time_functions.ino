@@ -52,3 +52,4 @@ void syncTime()
   displayInfo("Syncing Time", "");
   setTime(getUnixTimeFromNTP());
 }
+

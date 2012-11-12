@@ -20,6 +20,10 @@ void controlHeater()
   if(currentTemp > highTemp)
   {
     digitalWrite(heaterPin, LOW);
+    /* If the heater was on, we know we have completed a 
+     * cycle, so let's count it */
+    if(heater)
+      ++heaterCycles;
     heater = false;
     return;
   }
@@ -27,8 +31,6 @@ void controlHeater()
   if(currentTemp < lowTemp)
   {
     digitalWrite(heaterPin, HIGH);
-    if(heater)
-      ++heaterCycles;
     heater = true;
   }
 }

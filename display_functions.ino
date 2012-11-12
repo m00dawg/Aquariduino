@@ -28,12 +28,6 @@ void displayCurrentTemp()
     else if(currentTemp < alertLowTemp)
       lcd.setBacklight(BLUE);
   }
-  /*
-  if(heater)
-   displayInfo("Temp: " + formatTemperature(currentTemp), "Heater On");
-   else
-   displayInfo("Temp: " + formatTemperature(currentTemp), "Heater Off"); 
-   */
   displayInfo("Temp: " + formatTemperature(currentTemp), 
   "H:" + (String)heater + " L:" + (String)light.state);
 }
