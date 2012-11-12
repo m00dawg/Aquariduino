@@ -211,10 +211,6 @@ void setup()
   //Sync to NTP
   syncTime();
   
-  // Setup Alarms
-  Alarm.alarmRepeat(light.schedule[0], light.schedule[1], 0, lightsOn);
-  Alarm.alarmRepeat(light.schedule[2], light.schedule[3], 0, lightsOff);
-
   // Initialize Temp Sensor Library
   sensors.begin();
 }
@@ -233,6 +229,10 @@ void loop()
       controlHeater();  
     else
       error("NO SENSORS");
+    
+    // Check to see if it's time for light to turn on/off
+    checkSchedule(light);
+    
     lastSensorPoll = currentMillis;
   }
 
