@@ -1,5 +1,5 @@
 /*
-  Aquariduino v1.20
+  Aquariduino v1.22
  By: Tim Soderstrom
  
  Pins used:
@@ -126,7 +126,7 @@ EthernetUDP udp;
 DeviceOnSchedule light = 
 {
   { 8, 0, 21, 0 }, // 8am - 9pm CST
-  A1,                    // Pin 1
+  A1,                    // Analog Pin 1
   false                 // State
 };            
 
@@ -173,7 +173,7 @@ time_t time;
 
 void setup()
 { 
-  //Serial.begin(9600); 
+  Serial.begin(9600); 
   /*
   while (!Serial)
    {
@@ -204,7 +204,7 @@ void setup()
   lcd.setCursor(0,0);
   lcd.print("Aquariduino");
   lcd.setCursor(0,1);
-  lcd.print("v1.20");
+  lcd.print("v1.22");
   delay(2000);
   lcd.clear();
 
@@ -336,16 +336,6 @@ void loop()
     webPrintRawStats();
     webClient.stop();
   }
-}
-
-void lightsOn()
-{
-   deviceOn(light);
-}
-
-void lightsOff()
-{
-   deviceOff(light);
 }
 
 /*

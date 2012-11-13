@@ -13,18 +13,28 @@ struct DeviceOnSchedule{
   boolean state;
 };
 
-void checkSchedule(DeviceOnSchedule device)
+void checkSchedule(DeviceOnSchedule &device)
 {
-  int startSeconds = device.schedule[0] * 3600 + device.schedule[1] * 60;
-  int stopSeconds = device.schedule[1] * 3600 + device.schedule[2] * 60;
-  int currentSeconds = elapsedSecsToday(now());
+  unsigned long startSeconds = device.schedule[0] * (long)3600 + device.schedule[1] * 60;
+  unsigned long stopSeconds = device.schedule[2] * (long)3600 + device.schedule[3] * 60;
+  unsigned long currentSeconds = elapsedSecsToday(now());
+  /*
+  Serial.print("Stop/Start/Current: ");
+  Serial.print((String)stopSeconds);
+  Serial.print(" ");
+  Serial.print((String)startSeconds);
+  Serial.print(" ");
+  Serial.println((String)currentSeconds);
+  */
   if(currentSeconds > startSeconds & stopSeconds > currentSeconds)
   {
+    //Serial.println("Device On");
     digitalWrite(device.pin, HIGH);
     device.state = true;
   }
   else
   {
+    //Serial.println("Device Off");
     digitalWrite(device.pin, LOW);
     device.state = false;    
   }
