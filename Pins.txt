@@ -1,12 +1,12 @@
 Digtal:
 0 - RX
 1 - TX
-2 - Temp Sensors 
+2  
 3 
 4  - SD Card
 5 
-6
-7 - WiFi Handshake
+6 
+7 - Temp Sensors (WiFi Handshake)
 8  
 9
 10 - SPI (WiFi/Ethernet Shield)

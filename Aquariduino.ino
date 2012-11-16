@@ -4,8 +4,9 @@
  
  Pins used:
  Heater Relay: A0
+ Lamp Relay: A1
  LCD Shield: Analog Pins 4 & 5 (I2C Bus)
- Temperature 1 Wire Bus: 2
+ Temperature 1 Wire Bus: 7
  */
 #include <Wire.h>
 #include <OneWire.h>
@@ -126,7 +127,7 @@ EthernetUDP udp;
 DeviceOnSchedule light = 
 {
   { 8, 0, 21, 0 }, // 8am - 9pm CST
-  A1,                    // Analog Pin 1
+  lightPin,                    // Analog Pin 1
   false                 // State
 };            
 
@@ -196,8 +197,10 @@ void setup()
 
   /* Turn off header, since we don't know what's going on until
    we poll the temperature sensor */
+  pinMode(light.pin, OUTPUT);
   pinMode(heaterPin, OUTPUT);
   digitalWrite(heaterPin, LOW);
+
 
   /* Print Title and Version */
   lcd.setBacklight(WHITE);
