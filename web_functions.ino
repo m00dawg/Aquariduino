@@ -20,5 +20,8 @@ void webProcessInput()
 
 void webPrintRawStats()
 {
-  webClient.println("Temp:" + String(floatToString(currentTemp)) + " Heater:" + heater + " Light:" + light.state);
+  if(multiLineOutput)
+    webClient.println("Temp:" + String(floatToString(currentTemp)) + "\nHeater:" + heater + "\nLight:" + light.state);
+  else
+    webClient.println("Temp:" + String(floatToString(currentTemp)) + " Heater:" + heater + " Light:" + light.state);
 }

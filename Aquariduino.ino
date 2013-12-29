@@ -1,5 +1,5 @@
 /*
-  Aquariduino v1.22
+  Aquariduino v1.23
  By: Tim Soderstrom
  
  Pins used:
@@ -75,6 +75,9 @@ const int maxPage = 5;
 const int sensorPollingInterval = 5;
 const int lcdUpdateInterval = 5;
 const int alertTimeout = 5;
+
+/* Web Output Options */
+const boolean multiLineOutput = true;
 
 /* 
  Temperature range to cycle heater in Celsius
@@ -207,7 +210,7 @@ void setup()
   lcd.setCursor(0,0);
   lcd.print("Aquariduino");
   lcd.setCursor(0,1);
-  lcd.print("v1.22");
+  lcd.print("v1.23");
   delay(2000);
   lcd.clear();
 
