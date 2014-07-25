@@ -1,19 +1,16 @@
+Spark Shield Shiled Pins
+
 Digtal:
-0 - RX
-1 - TX
-2  
-3 
-4  - SD Card
+A   S   
+0   0   RX
+1   1   TX
+2   2   Temp Sensors
+3  
+4  
 5 
 6 
-7 - Temp Sensors (WiFi Handshake)
-8  
-9
-10 - SPI (WiFi/Ethernet Shield)
-11 - SPI (WiFi/Ethernet Shield)
-12 - SPI (WiFi/Ethernet Shield)
-13 - SPI (WiFi/Ethernet Shield)
 
+(OLD DO NOT USE)
 Analog:
 0 - Heater Relay
 1 - Lamp Relay

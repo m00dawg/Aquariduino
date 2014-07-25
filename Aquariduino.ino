@@ -86,8 +86,10 @@ const boolean multiLineOutput = true;
  alertHighTemp = Tank too hot even with heater off
  alertLowTemp = Tank too cold even with heater on
  */
-const float lowTemp = 24.25;
-const float highTemp = 24.5;
+//const float lowTemp = 24.25;
+//const float highTemp = 24.5;
+const float lowTemp = 26.25;
+const float highTemp = 26.5;
 const float alertHighTemp = 27.0;
 const float alertLowTemp = 23.0;
 
